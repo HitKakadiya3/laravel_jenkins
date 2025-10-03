@@ -1,0 +1,62 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_app
+    volumes:
+      - ./:/var/www
+    networks:
+      - appnet
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:stable
+    container_name: laravel_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www:cached
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - appnet
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.0
+    container_name: laravel_db
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - appnet
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    user: root
+    environment:
+      JAVA_OPTS: -Djenkins.install.runSetupWizard=false
+    ports:
+      - "8081:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock     # allow Docker socket (so jenkins can build images)
+      - /usr/bin/docker:/usr/bin/docker               # requires docker client on host
+    networks:
+      - appnet
+
+volumes:
+  dbdata:
+  jenkins_home:
+
+networks:
+  appnet:
+    driver: bridge
