@@ -11,18 +11,10 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                script {
-                    // Clean workspace
-                    deleteDir()
-                    
-                    // Checkout source code
-                    git branch: 'main', url: 'https://github.com/HitKakadiya3/laravel_jenkins.git'
-                    
-                    // Verify code
-                    sh 'ls -la'
-                    sh 'test -f composer.json && echo "✅ composer.json found" || echo "❌ composer.json NOT found"'
-                    sh 'test -f artisan && echo "✅ artisan found" || echo "❌ artisan NOT found"'
-                }
+                deleteDir() // clean workspace
+                git branch: 'main', url: 'https://github.com/HitKakadiya3/laravel_jenkins.git'
+                sh 'ls -la'  // Verify files
+                sh 'test -f composer.json && echo "✅ composer.json found" || echo "❌ composer.json missing"'
             }
         }
 
