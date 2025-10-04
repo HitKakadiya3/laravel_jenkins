@@ -15,45 +15,45 @@ pipeline {
                     
                     // Create a temporary Dockerfile that includes git clone
                     writeFile file: 'Dockerfile.jenkins', text: '''
-FROM php:8.2-fpm
+                        FROM php:8.2-fpm
 
-# Set working directory
-WORKDIR /var/www
+                        # Set working directory
+                        WORKDIR /var/www
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \\
-    git \\
-    unzip \\
-    libzip-dev \\
-    libpng-dev \\
-    libonig-dev \\
-    libxml2-dev \\
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
+                        # Install dependencies
+                        RUN apt-get update && apt-get install -y \\
+                            git \\
+                            unzip \\
+                            libzip-dev \\
+                            libpng-dev \\
+                            libonig-dev \\
+                            libxml2-dev \\
+                            && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
 
-# Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+                        # Install Composer
+                        COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Clone the repository
-RUN git clone https://github.com/HitKakadiya3/laravel_jenkins.git /var/www/app \\
-    && cd /var/www/app \\
-    && git checkout main
+                        # Clone the repository
+                        RUN git clone https://github.com/HitKakadiya3/laravel_jenkins.git /var/www/app \\
+                            && cd /var/www/app \\
+                            && git checkout main
 
-# Set working directory to app
-WORKDIR /var/www/app
+                        # Set working directory to app
+                        WORKDIR /var/www/app
 
-# Install PHP dependencies
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+                        # Install PHP dependencies
+                        RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Set proper permissions
-RUN chown -R www-data:www-data /var/www/app \\
-    && chmod -R 755 /var/www/app/storage || true
+                        # Set proper permissions
+                        RUN chown -R www-data:www-data /var/www/app \\
+                            && chmod -R 755 /var/www/app/storage || true
 
-# Expose port
-EXPOSE 9000
+                        # Expose port
+                        EXPOSE 9000
 
-# Start PHP-FPM
-CMD ["php-fpm"]
-'''
+                        # Start PHP-FPM
+                        CMD ["php-fpm"]
+                        '''
                     
                     // Build with the new Dockerfile
                     sh "docker build -f Dockerfile.jenkins -t ${DOCKER_IMAGE}:test ."
