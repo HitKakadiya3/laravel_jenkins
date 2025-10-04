@@ -10,7 +10,35 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                script {
+                    echo 'Checking out source code...'
+                    
+                    // Clean workspace first
+                    deleteDir()
+                    
+                    // Try checkout scm first
+                    try {
+                        checkout scm
+                        echo 'SCM checkout successful'
+                    } catch (Exception e) {
+                        echo "SCM checkout failed: ${e.getMessage()}"
+                        echo 'Trying alternative git clone...'
+                        
+                        // Alternative: Clone directly if SCM fails
+                        sh '''
+                            git clone https://github.com/HitKakadiya3/laravel_jenkins.git .
+                            git checkout main
+                        '''
+                        echo 'Git clone successful'
+                    }
+                    
+                    // Verify checkout
+                    echo 'Verifying checkout...'
+                    sh 'pwd'
+                    sh 'ls -la'
+                    sh 'test -f composer.json && echo "✅ composer.json found" || echo "❌ composer.json NOT found"'
+                    sh 'test -f artisan && echo "✅ artisan found" || echo "❌ artisan NOT found"'
+                }
                 echo 'Code checked out successfully!'
             }
         }
