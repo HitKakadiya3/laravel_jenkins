@@ -32,6 +32,8 @@ services:
       MYSQL_DATABASE: laravel
       MYSQL_USER: laravel
       MYSQL_PASSWORD: secret
+    ports:
+      - "3307:3306"
     volumes:
       - dbdata:/var/lib/mysql
     networks:
