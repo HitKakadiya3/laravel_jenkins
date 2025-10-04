@@ -48,7 +48,7 @@ pipeline {
                         echo "Directory contents:"
                         ls -la
                         echo "Checking for Laravel files:"
-                        ls -la | grep -E "(composer\.json|artisan|\.env\.example)" || echo "No Laravel files found"
+                        ls -la | grep -E "(composer.json|artisan|.env.example)" || echo "No Laravel files found"
                         echo "=== End Debug ==="
                     '''
                 }
