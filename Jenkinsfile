@@ -1,8 +1,8 @@
 pipeline {
     agent {
         docker {
-            image 'laravel_jenkins:latest'   // <-- your Laravel image
-            args '-v $PWD:/var/www'         // mount workspace
+            image 'laravel_jenkins:latest'
+            args '-v $PWD:/var/www'
         }
     }
 
