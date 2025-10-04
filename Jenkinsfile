@@ -25,6 +25,18 @@ pipeline {
             }
         }
 
+        stage('Debug Workspace') {
+            steps {
+                script {
+                    echo 'Debugging workspace contents...'
+                    sh 'pwd'
+                    sh 'ls -la'
+                    sh 'ls -la /var/jenkins_home/workspace/laravel-jenkins/ || echo "Workspace directory not found"'
+                    echo 'Workspace debug completed!'
+                }
+            }
+        }
+
         stage('Environment Check') {
             steps {
                 script {
@@ -42,10 +54,22 @@ pipeline {
                 script {
                     echo 'Installing dependencies...'
                     sh """
-                        docker run --rm -v \$(pwd):/source ${DOCKER_IMAGE}:test \\
+                        docker run --rm -v \${WORKSPACE}:/source ${DOCKER_IMAGE}:test \\
                         bash -c '
+                            echo "=== Debug: Checking source directory ==="
+                            ls -la /source
+                            echo "=== Looking for composer.json ==="
+                            find /source -name "composer.json" -type f
+                            echo "=== Current working directory ==="
+                            pwd
                             cd /source
-                            composer install --no-interaction --prefer-dist --optimize-autoloader
+                            if [ -f composer.json ]; then
+                                echo "Found composer.json, running composer install..."
+                                composer install --no-interaction --prefer-dist --optimize-autoloader
+                            else
+                                echo "ERROR: composer.json not found in /source"
+                                exit 1
+                            fi
                         '
                     """
                     echo 'Dependencies installed successfully!'
@@ -58,7 +82,7 @@ pipeline {
                 script {
                     echo 'Running tests...'
                     sh """
-                        docker run --rm -v \$(pwd):/source ${DOCKER_IMAGE}:test \\
+                        docker run --rm -v \${WORKSPACE}:/source ${DOCKER_IMAGE}:test \\
                         bash -c '
                             cd /source
                             cp .env.example .env || echo ".env file already exists"
