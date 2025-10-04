@@ -11,13 +11,47 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                deleteDir() // Clean workspace
-                git branch: 'main', url: 'https://github.com/HitKakadiya3/laravel_jenkins.git'
-                
-                // Verify code
-                sh 'ls -la'
-                sh 'test -f composer.json && echo "✅ composer.json found" || echo "❌ composer.json missing"'
-                sh 'test -f artisan && echo "✅ artisan found" || echo "❌ artisan missing"'
+                script {
+                    echo 'Cleaning and checking out source code...'
+                    deleteDir() // Clean workspace
+                    
+                    // Clone the repository
+                    sh '''
+                        git clone https://github.com/HitKakadiya3/laravel_jenkins.git .
+                        git checkout main
+                        echo "=== Git clone completed ==="
+                    '''
+                    
+                    // Verify code
+                    echo 'Verifying checkout...'
+                    sh 'pwd'
+                    sh 'whoami'
+                    sh 'ls -la'
+                    sh 'test -f composer.json && echo "✅ composer.json found" || echo "❌ composer.json missing"'
+                    sh 'test -f artisan && echo "✅ artisan found" || echo "❌ artisan missing"'
+                    
+                    // Show workspace variable
+                    echo "Workspace: ${WORKSPACE}"
+                    sh 'echo "Current directory: $(pwd)"'
+                }
+            }
+        }
+
+        stage('Debug Workspace') {
+            steps {
+                script {
+                    echo 'Debugging workspace state...'
+                    sh '''
+                        echo "=== Workspace Debug Info ==="
+                        echo "Current directory: $(pwd)"
+                        echo "Workspace variable: $WORKSPACE"
+                        echo "Directory contents:"
+                        ls -la
+                        echo "Checking for Laravel files:"
+                        ls -la | grep -E "(composer\.json|artisan|\.env\.example)" || echo "No Laravel files found"
+                        echo "=== End Debug ==="
+                    '''
+                }
             }
         }
 
