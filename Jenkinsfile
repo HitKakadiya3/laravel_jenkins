@@ -5,38 +5,55 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+                echo 'Code checked out successfully!'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Environment Check') {
             steps {
-                sh 'docker build -t hitendra369/laravel-jenkins:latest .'
-                sh 'docker images'
+                sh 'php --version'
+                sh 'composer --version'
+                sh 'docker --version'
+                echo 'Environment check completed!'
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Install Dependencies') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'DOCKERHUB_CREDENTIALS',
-                        usernameVariable: 'DOCKERHUB_USERNAME',
-                        passwordVariable: 'DOCKERHUB_PASSWORD'
-                    )
-                ]) {
-                    sh '''
-                        echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-                        docker push hitendra369/laravel-jenkins:latest
-                        docker logout
-                    '''
-                }
+                sh 'composer install --no-interaction --prefer-dist --optimize-autoloader'
+                echo 'Dependencies installed successfully!'
             }
         }
 
-        stage('Test Build') {
+        stage('Run Tests') {
             steps {
-                sh 'echo "Laravel project build successful!"'
+                sh 'cp .env.example .env'
+                sh 'php artisan key:generate'
+                sh 'php artisan config:clear'
+                sh 'vendor/bin/phpunit --testdox'
+                echo 'Tests completed!'
             }
+        }
+
+        stage('Simple Test') {
+            steps {
+                echo 'Starting simple test...'
+                sh 'echo "Current directory: $(pwd)"'
+                sh 'ls -la'
+                echo 'Laravel Jenkins pipeline test successful! 🚀'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline execution completed!'
+        }
+        success {
+            echo '✅ All tests passed successfully!'
+        }
+        failure {
+            echo '❌ Pipeline failed. Check the logs for details.'
         }
     }
 }
