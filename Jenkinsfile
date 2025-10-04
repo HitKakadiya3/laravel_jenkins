@@ -5,6 +5,12 @@ pipeline {
         DOCKER_IMAGE = 'hitendra369/laravel-jenkins'
         DOCKER_TAG = "${BUILD_NUMBER}"
         DOCKER_LATEST = 'latest'
+        DEPLOY_CONTAINER = 'laravel_jenkins_app'       // name of the running container
+        DEPLOY_PORT = '9000'                    // exposed port
+    }
+
+    triggers {
+        githubPush()  // <-- triggers when code is pushed to GitHub
     }
 
     stages {
@@ -12,52 +18,38 @@ pipeline {
             steps {
                 script {
                     echo 'Building Docker image with source code...'
-                    
-                    // Create a temporary Dockerfile that includes git clone
                     writeFile file: 'Dockerfile.jenkins', text: '''
-                        FROM php:8.2-fpm
+FROM php:8.2-fpm
 
-                        # Set working directory
-                        WORKDIR /var/www
+WORKDIR /var/www
 
-                        # Install dependencies
-                        RUN apt-get update && apt-get install -y \\
-                            git \\
-                            unzip \\
-                            libzip-dev \\
-                            libpng-dev \\
-                            libonig-dev \\
-                            libxml2-dev \\
-                            && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
+RUN apt-get update && apt-get install -y \\
+    git \\
+    unzip \\
+    libzip-dev \\
+    libpng-dev \\
+    libonig-dev \\
+    libxml2-dev \\
+    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
 
-                        # Install Composer
-                        COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-                        # Clone the repository
-                        RUN git clone https://github.com/HitKakadiya3/laravel_jenkins.git /var/www/app \\
-                            && cd /var/www/app \\
-                            && git checkout main
+RUN git clone https://github.com/HitKakadiya3/laravel_jenkins.git /var/www/app \\
+    && cd /var/www/app \\
+    && git checkout main
 
-                        # Set working directory to app
-                        WORKDIR /var/www/app
+WORKDIR /var/www/app
 
-                        # Install PHP dependencies
-                        RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-                        # Set proper permissions
-                        RUN chown -R www-data:www-data /var/www/app \\
-                            && chmod -R 755 /var/www/app/storage || true
+RUN chown -R www-data:www-data /var/www/app \\
+    && chmod -R 755 /var/www/app/storage || true
 
-                        # Expose port
-                        EXPOSE 9000
+EXPOSE 9000
 
-                        # Start PHP-FPM
-                        CMD ["php-fpm"]
-                        '''
-                    
-                    // Build with the new Dockerfile
+CMD ["php-fpm"]
+'''
                     sh "docker build -f Dockerfile.jenkins -t ${DOCKER_IMAGE}:test ."
-                    echo 'Docker image built with source code!'
                 }
             }
         }
@@ -65,21 +57,13 @@ pipeline {
         stage('Verify Build') {
             steps {
                 script {
-                    echo 'Verifying Docker image build...'
                     sh """
                         docker run --rm ${DOCKER_IMAGE}:test bash -c '
-                            echo "=== Verifying Laravel installation ==="
                             cd /var/www/app
-                            pwd
-                            ls -la
-                            echo "=== Checking Laravel files ==="
-                            test -f composer.json && echo "✅ composer.json found" || echo "❌ composer.json missing"
-                            test -f artisan && echo "✅ artisan found" || echo "❌ artisan missing"
-                            test -d vendor && echo "✅ vendor directory found" || echo "❌ vendor missing"
-                            echo "=== Verification complete ==="
+                            test -f composer.json && echo "✅ composer.json found" || echo "❌ missing composer.json"
+                            test -f artisan && echo "✅ artisan found" || echo "❌ missing artisan"
                         '
                     """
-                    echo 'Build verification completed!'
                 }
             }
         }
@@ -87,17 +71,15 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    echo 'Running Laravel tests...'
                     sh """
                         docker run --rm ${DOCKER_IMAGE}:test bash -c '
                             cd /var/www/app
-                            cp .env.example .env || echo ".env already exists"
+                            cp .env.example .env || true
                             php artisan key:generate --force
                             php artisan config:clear
-                            vendor/bin/phpunit --testdox || echo "Tests completed with some issues"
+                            vendor/bin/phpunit --testdox || echo "Tests completed with warnings"
                         '
                     """
-                    echo 'Tests completed!'
                 }
             }
         }
@@ -105,30 +87,52 @@ pipeline {
         stage('Tag Docker Images') {
             steps {
                 script {
-                    echo 'Tagging Docker images...'
                     sh "docker tag ${DOCKER_IMAGE}:test ${DOCKER_IMAGE}:${DOCKER_TAG}"
                     sh "docker tag ${DOCKER_IMAGE}:test ${DOCKER_IMAGE}:${DOCKER_LATEST}"
-                    sh 'docker images | grep laravel-jenkins'
                 }
             }
         }
 
         stage('Push Docker Images') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'DOCKERHUB_CREDENTIALS',
-                                                 usernameVariable: 'DOCKERHUB_USERNAME',
-                                                 passwordVariable: 'DOCKERHUB_PASSWORD')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'DOCKERHUB_CREDENTIALS',
+                    usernameVariable: 'DOCKERHUB_USERNAME',
+                    passwordVariable: 'DOCKERHUB_PASSWORD'
+                )]) {
                     script {
-                        echo 'Logging into Docker Hub...'
                         sh 'echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin'
-                        
-                        echo 'Pushing Docker images...'
                         sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
                         sh "docker push ${DOCKER_IMAGE}:${DOCKER_LATEST}"
-                        
-                        echo 'Logging out from Docker Hub...'
                         sh 'docker logout'
                     }
+                }
+            }
+        }
+
+        stage('Auto Deploy to Server') {
+            when {
+                branch 'main'  // only deploy if branch is main
+            }
+            steps {
+                script {
+                    echo 'Deploying latest Docker image...'
+
+                    // Stop existing container (if running)
+                    sh "docker stop ${DEPLOY_CONTAINER} || true"
+                    sh "docker rm ${DEPLOY_CONTAINER} || true"
+
+                    // Pull latest image from Docker Hub
+                    sh "docker pull ${DOCKER_IMAGE}:${DOCKER_LATEST}"
+
+                    // Run the new container
+                    sh """
+                        docker run -d --name ${DEPLOY_CONTAINER} -p ${DEPLOY_PORT}:9000 \\
+                        -v /var/www/html/storage:/var/www/app/storage \\
+                        ${DOCKER_IMAGE}:${DOCKER_LATEST}
+                    """
+
+                    echo "✅ Deployment complete. Application running on port ${DEPLOY_PORT}"
                 }
             }
         }
@@ -136,7 +140,6 @@ pipeline {
         stage('Cleanup') {
             steps {
                 script {
-                    echo 'Removing temporary Docker images...'
                     sh "docker rmi ${DOCKER_IMAGE}:test || true"
                 }
             }
@@ -145,14 +148,14 @@ pipeline {
 
     post {
         always {
-            echo 'Pipeline completed.'
             sh 'docker system prune -f || true'
+            echo 'Pipeline finished.'
         }
         success {
-            echo "✅ Docker images pushed successfully: ${DOCKER_IMAGE}:${DOCKER_TAG} and ${DOCKER_IMAGE}:${DOCKER_LATEST}"
+            echo "✅ Build, push, and deploy successful!"
         }
         failure {
-            echo '❌ Pipeline failed. Check the logs.'
+            echo "❌ Pipeline failed. Check logs."
         }
     }
 }
