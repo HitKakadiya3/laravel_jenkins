@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'laravel_jenkins:latest'   // <-- your Laravel image
+            args '-v $PWD:/var/www'         // mount workspace
+        }
+    }
 
     stages {
         stage('Checkout') {
@@ -8,19 +13,25 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Environment Check') {
             steps {
-                sh 'docker build -t laravel_jenkins .'
+                sh 'php --version'
+                sh 'composer --version'
             }
         }
 
-        stage('Run Commands in Container') {
+        stage('Install Dependencies') {
             steps {
-                sh 'docker run --rm -v $PWD:/var/www laravel_jenkins php --version'
-                sh 'docker run --rm -v $PWD:/var/www laravel_jenkins composer --version'
-                sh 'docker run --rm -v $PWD:/var/www laravel_jenkins composer install --no-interaction --prefer-dist --optimize-autoloader'
-                sh 'docker run --rm -v $PWD:/var/www laravel_jenkins php artisan key:generate'
-                sh 'docker run --rm -v $PWD:/var/www laravel_jenkins vendor/bin/phpunit --testdox'
+                sh 'composer install --no-interaction --prefer-dist --optimize-autoloader'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh 'cp .env.example .env'
+                sh 'php artisan key:generate'
+                sh 'php artisan config:clear'
+                sh 'vendor/bin/phpunit --testdox'
             }
         }
     }
