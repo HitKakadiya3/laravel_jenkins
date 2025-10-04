@@ -15,40 +15,67 @@ pipeline {
             }
         }
 
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo 'Building Docker image for testing...'
+                    sh "docker build -t ${DOCKER_IMAGE}:test ."
+                    echo 'Docker image built successfully!'
+                }
+            }
+        }
+
         stage('Environment Check') {
             steps {
-                sh 'php --version'
-                sh 'composer --version'
-                sh 'docker --version'
-                echo 'Environment check completed!'
+                script {
+                    echo 'Checking environment inside Docker container...'
+                    sh "docker run --rm ${DOCKER_IMAGE}:test php --version"
+                    sh "docker run --rm ${DOCKER_IMAGE}:test composer --version"
+                    sh 'docker --version'
+                    echo 'Environment check completed!'
+                }
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                sh 'composer install --no-interaction --prefer-dist --optimize-autoloader'
-                echo 'Dependencies installed successfully!'
+                script {
+                    echo 'Installing dependencies inside Docker container...'
+                    sh """
+                        docker run --rm -v \$(pwd):/var/www/html -w /var/www/html ${DOCKER_IMAGE}:test \\
+                        composer install --no-interaction --prefer-dist --optimize-autoloader
+                    """
+                    echo 'Dependencies installed successfully!'
+                }
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'cp .env.example .env'
-                sh 'php artisan key:generate'
-                sh 'php artisan config:clear'
-                sh 'vendor/bin/phpunit --testdox'
-                echo 'Tests completed successfully!'
+                script {
+                    echo 'Running tests inside Docker container...'
+                    sh """
+                        docker run --rm -v \$(pwd):/var/www/html -w /var/www/html ${DOCKER_IMAGE}:test \\
+                        bash -c '
+                            cp .env.example .env
+                            php artisan key:generate
+                            php artisan config:clear
+                            vendor/bin/phpunit --testdox
+                        '
+                    """
+                    echo 'Tests completed successfully!'
+                }
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Tag and Prepare Final Images') {
             steps {
                 script {
-                    echo 'Building Docker image...'
-                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_LATEST} ."
+                    echo 'Tagging images for release...'
+                    sh "docker tag ${DOCKER_IMAGE}:test ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                    sh "docker tag ${DOCKER_IMAGE}:test ${DOCKER_IMAGE}:${DOCKER_LATEST}"
                     sh 'docker images | grep laravel-jenkins'
-                    echo 'Docker image built successfully!'
+                    echo 'Images tagged successfully!'
                 }
             }
         }
@@ -83,6 +110,7 @@ pipeline {
             steps {
                 script {
                     echo 'Cleaning up local Docker images...'
+                    sh "docker rmi ${DOCKER_IMAGE}:test || true"
                     sh "docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true"
                     echo 'Cleanup completed!'
                 }
