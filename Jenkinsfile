@@ -132,7 +132,7 @@ CMD ["php-fpm"]
                         ${DOCKER_IMAGE}:${DOCKER_LATEST}
                     """
 
-                    echo "✅Deployment complete. Application running on port ${DEPLOY_PORT}"
+                    echo "✅ Deployment complete. Application running on port ${DEPLOY_PORT}"
                 }
             }
         }
