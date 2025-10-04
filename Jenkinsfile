@@ -42,7 +42,7 @@ pipeline {
                 script {
                     echo 'Installing dependencies inside Docker container...'
                     sh """
-                        docker run --rm -v \$(pwd):/var/www/html -w /var/www/html ${DOCKER_IMAGE}:test \\
+                        docker run --rm -v \$(pwd):/var/www -w /var/www ${DOCKER_IMAGE}:test \\
                         composer install --no-interaction --prefer-dist --optimize-autoloader
                     """
                     echo 'Dependencies installed successfully!'
@@ -55,7 +55,7 @@ pipeline {
                 script {
                     echo 'Running tests inside Docker container...'
                     sh """
-                        docker run --rm -v \$(pwd):/var/www/html -w /var/www/html ${DOCKER_IMAGE}:test \\
+                        docker run --rm -v \$(pwd):/var/www -w /var/www ${DOCKER_IMAGE}:test \\
                         bash -c '
                             cp .env.example .env
                             php artisan key:generate
