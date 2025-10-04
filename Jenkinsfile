@@ -1,5 +1,9 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'laravel_jenkins:latest'   // <- use your built PHP image
+        }
+    }
 
     stages {
         stage('Checkout') {
@@ -13,7 +17,6 @@ pipeline {
             steps {
                 sh 'php --version'
                 sh 'composer --version'
-                sh 'docker --version'
                 echo 'Environment check completed!'
             }
         }
@@ -38,7 +41,7 @@ pipeline {
         stage('Simple Test') {
             steps {
                 echo 'Starting simple test...'
-                sh 'echo "Current directory: $(pwd)"'
+                sh 'pwd'
                 sh 'ls -la'
                 echo 'Laravel Jenkins pipeline test successful! 🚀'
             }
