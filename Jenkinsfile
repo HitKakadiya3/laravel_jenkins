@@ -80,27 +80,21 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 script {
-                    echo 'Installing dependencies...'
                     sh """
-                        docker run --rm -v \${WORKSPACE}:/source ${DOCKER_IMAGE}:test \\
-                        bash -c '
+                        docker run --rm -v \${WORKSPACE}:/var/www -w /var/www ${DOCKER_IMAGE}:test bash -c '
                             echo "=== Debug: Checking source directory ==="
-                            ls -la /source
+                            ls -la
                             echo "=== Looking for composer.json ==="
-                            find /source -name "composer.json" -type f
-                            echo "=== Current working directory ==="
-                            pwd
-                            cd /source
+                            find . -name "composer.json" -type f
                             if [ -f composer.json ]; then
                                 echo "Found composer.json, running composer install..."
                                 composer install --no-interaction --prefer-dist --optimize-autoloader
                             else
-                                echo "ERROR: composer.json not found in /source"
+                                echo "ERROR: composer.json not found"
                                 exit 1
                             fi
                         '
                     """
-                    echo 'Dependencies installed successfully!'
                 }
             }
         }
