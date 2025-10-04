@@ -1,10 +1,10 @@
 pipeline {
-    agent {
-        docker {
-            image 'laravel_jenkins:latest'   // <-- your Laravel image
-            args '-v $PWD:/var/www'         // mount workspace
-        }
-    }
+    // agent {
+    //     docker {
+    //         image 'laravel_jenkins:latest'   // <-- your Laravel image
+    //         args '-v $PWD:/var/www'         // mount workspace
+    //     }
+    // }
 
     stages {
         stage('Checkout') {
