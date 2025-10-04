@@ -101,9 +101,6 @@ CMD ["php-fpm"]
                 }
             }
         }
-                }
-            }
-        }
 
         stage('Tag Docker Images') {
             steps {
