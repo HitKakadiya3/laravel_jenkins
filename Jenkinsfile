@@ -1,7 +1,8 @@
 pipeline {
     agent {
         docker {
-            image 'laravel_jenkins:latest'   // <- use your built PHP image
+            image 'laravel_jenkins:latest'   // <-- your Laravel image
+            args '-v $PWD:/var/www'         // mount workspace
         }
     }
 
@@ -9,7 +10,6 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-                echo 'Code checked out successfully!'
             }
         }
 
@@ -17,14 +17,12 @@ pipeline {
             steps {
                 sh 'php --version'
                 sh 'composer --version'
-                echo 'Environment check completed!'
             }
         }
 
         stage('Install Dependencies') {
             steps {
                 sh 'composer install --no-interaction --prefer-dist --optimize-autoloader'
-                echo 'Dependencies installed successfully!'
             }
         }
 
@@ -34,29 +32,7 @@ pipeline {
                 sh 'php artisan key:generate'
                 sh 'php artisan config:clear'
                 sh 'vendor/bin/phpunit --testdox'
-                echo 'Tests completed!'
             }
-        }
-
-        stage('Simple Test') {
-            steps {
-                echo 'Starting simple test...'
-                sh 'pwd'
-                sh 'ls -la'
-                echo 'Laravel Jenkins pipeline test successful! 🚀'
-            }
-        }
-    }
-
-    post {
-        always {
-            echo 'Pipeline execution completed!'
-        }
-        success {
-            echo '✅ All tests passed successfully!'
-        }
-        failure {
-            echo '❌ Pipeline failed. Check the logs for details.'
         }
     }
 }
