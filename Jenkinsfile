@@ -112,10 +112,18 @@ CMD ["php-fpm"]
 
         stage('Auto Deploy to Server') {
             when {
-                branch 'main'  // only deploy if branch is main
+                anyOf {
+                    branch 'main'
+                    branch 'master'
+                    expression { 
+                        return env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master' || env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'origin/master'
+                    }
+                }
             }
             steps {
                 script {
+                    echo "Current branch: ${env.BRANCH_NAME ?: env.GIT_BRANCH ?: 'unknown'}"
+                    echo "Git commit: ${env.GIT_COMMIT ?: 'unknown'}"
                     echo 'Deploying latest Docker image...'
 
                     // Stop existing container (if running)
