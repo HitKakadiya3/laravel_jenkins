@@ -87,7 +87,7 @@ CMD ["php-fpm"]
         stage('Tag Docker Images') {
             steps {
                 script {
-                    sh "docker tag ${DOCKER_IMAGE}:test ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                    // sh "docker tag ${DOCKER_IMAGE}:test ${DOCKER_IMAGE}:${DOCKER_TAG}" // Create for build number tag
                     sh "docker tag ${DOCKER_IMAGE}:test ${DOCKER_IMAGE}:${DOCKER_LATEST}"
                 }
             }
@@ -102,7 +102,7 @@ CMD ["php-fpm"]
                 )]) {
                     script {
                         sh 'echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin'
-                        sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                        // sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}" // Push build number tag
                         sh "docker push ${DOCKER_IMAGE}:${DOCKER_LATEST}"
                         sh 'docker logout'
                     }
