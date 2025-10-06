@@ -4,12 +4,22 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: laravel_app
+    ports:
+      - "8000:8000"
     volumes:
       - ./:/var/www
     networks:
       - appnet
     depends_on:
       - db
+    working_dir: /var/www
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=laravel
+      - DB_USERNAME=laravel
+      - DB_PASSWORD=secret  # Fixed: was "secre"
 
   nginx:
     image: nginx:stable
@@ -50,8 +60,8 @@ services:
       - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock     # allow Docker socket (so jenkins can build images)
-      - /usr/bin/docker:/usr/bin/docker               # requires docker client on host
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
     networks:
       - appnet
 
