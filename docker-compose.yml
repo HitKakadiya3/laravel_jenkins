@@ -3,7 +3,7 @@ services:
     image: hitendra369/laravel-jenkins:latest  # Use your Jenkins-built image
     container_name: laravel_app
     ports:
-      - "8000:8000"
+      - "8080:8000"
     volumes:
       - ./storage:/var/www/app/storage  # Only mount storage for persistence
       - ./bootstrap/cache:/var/www/app/bootstrap/cache
