@@ -19,7 +19,7 @@ services:
       - DB_USERNAME=laravel
       - DB_PASSWORD=secret
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      test: ["CMD", "curl", "-f", "http://localhost:8010"]
       interval: 30s
       timeout: 10s
       retries: 5
