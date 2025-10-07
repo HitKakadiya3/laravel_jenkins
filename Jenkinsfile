@@ -5,8 +5,8 @@ pipeline {
         DOCKER_IMAGE = 'hitendra369/laravel-jenkins'
         DOCKER_TAG = "${BUILD_NUMBER}"
         DOCKER_LATEST = 'latest'
-        DEPLOY_CONTAINER = 'laravel_jenkins_app'
-        DEPLOY_PORT = '8010' // Changed from 8000 to 8010 to avoid port conflict
+        DEPLOY_CONTAINER = 'laravel_jenkins_app'       // name of the running container
+        DEPLOY_PORT = '9000'                    // exposed port
     }
 
     triggers {
@@ -135,7 +135,7 @@ CMD ["php-fpm"]
 
                     // Run the new container
                     sh """
-                        docker run -d --name ${DEPLOY_CONTAINER} -p ${DEPLOY_PORT}:8010 \\
+                        docker run -d --name ${DEPLOY_CONTAINER} -p ${DEPLOY_PORT}:9000 \\
                         -v /var/www/html/storage:/var/www/app/storage \\
                         ${DOCKER_IMAGE}:${DOCKER_LATEST}
                     """
