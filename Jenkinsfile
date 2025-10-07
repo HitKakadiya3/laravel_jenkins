@@ -135,7 +135,7 @@ CMD ["php-fpm"]
 
                     // Run the new container
                     sh """
-                        docker run -d --name ${DEPLOY_CONTAINER} -p ${DEPLOY_PORT}:8000 \\
+                        docker run -d --name ${DEPLOY_CONTAINER} -p ${DEPLOY_PORT}:8010 \\
                         -v /var/www/html/storage:/var/www/app/storage \\
                         ${DOCKER_IMAGE}:${DOCKER_LATEST}
                     """
