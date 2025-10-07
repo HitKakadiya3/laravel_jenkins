@@ -15,6 +15,10 @@ RUN apt-get update && apt-get install -y \
     curl \
     && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
 
+# Install PostgreSQL extensions
+RUN apt-get update && apt-get install -y libpq-dev \
+    && docker-php-ext-install pdo_pgsql pgsql
+
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
