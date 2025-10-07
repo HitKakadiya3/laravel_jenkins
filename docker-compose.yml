@@ -3,7 +3,7 @@ services:
     image: hitendra369/laravel-jenkins:latest  # Use your Jenkins-built image
     container_name: laravel_app
     ports:
-      - "8000:8000"
+      - "8010:8000"  # Docker app runs on 8010, local server can use 8000
     volumes:
       - ./storage:/var/www/app/storage  # Only mount storage for persistence
     networks:
