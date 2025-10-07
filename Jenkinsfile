@@ -6,7 +6,7 @@ pipeline {
         DOCKER_TAG = "${BUILD_NUMBER}"
         DOCKER_LATEST = 'latest'
         DEPLOY_CONTAINER = 'laravel_jenkins_app'       // name of the running container
-        DEPLOY_PORT = '9000'                    // exposed port
+        DEPLOY_PORT = '8080'                    // exposed port
     }
 
     triggers {
