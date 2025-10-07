@@ -6,6 +6,7 @@ services:
       - "8000:8000"
     volumes:
       - ./storage:/var/www/app/storage  # Only mount storage for persistence
+      - ./bootstrap/cache:/var/www/app/bootstrap/cache
     networks:
       - appnet
     depends_on:
