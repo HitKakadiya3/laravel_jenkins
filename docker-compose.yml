@@ -3,7 +3,7 @@ services:
     image: hitendra369/laravel-jenkins:latest  # Use your Jenkins-built image
     container_name: laravel_app
     ports:
-      - "8000:8000" # App exposed on 8000, Jenkinsfile should use 8000 for deployment
+      - "8010:8000" # Changed host port from 8000 to 8010
     volumes:
       - ./storage:/var/www/app/storage  # Only mount storage for persistence
       - ./bootstrap/cache:/var/www/app/bootstrap/cache

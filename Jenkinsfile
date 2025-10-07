@@ -6,7 +6,7 @@ pipeline {
         DOCKER_TAG = "${BUILD_NUMBER}"
         DOCKER_LATEST = 'latest'
         DEPLOY_CONTAINER = 'laravel_jenkins_app'
-        DEPLOY_PORT = '8000' // changed from 9000 to 8000 to match docker-compose
+        DEPLOY_PORT = '8010' // Changed from 8000 to 8010 to avoid port conflict
     }
 
     triggers {
